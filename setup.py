@@ -1,57 +1,70 @@
-from pkg_resources import parse_version
-from configparser import ConfigParser
-import setuptools, shlex
-assert parse_version(setuptools.__version__)>=parse_version('36.2')
+# Copyright 2021 The HuggingFace Team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# note: all settings are in settings.ini; edit there, not here
-config = ConfigParser(delimiters=['='])
-config.read('settings.ini', encoding='utf-8')
-cfg = config['DEFAULT']
+from setuptools import setup
+from setuptools import find_packages
 
-cfg_keys = 'version description keywords author author_email'.split()
-expected = cfg_keys + "lib_name user branch license status min_python audience language".split()
-for o in expected: assert o in cfg, "missing expected setting: {}".format(o)
-setup_cfg = {o:cfg[o] for o in cfg_keys}
-
-licenses = {
-    'apache2': ('Apache Software License 2.0','OSI Approved :: Apache Software License'),
-    'mit': ('MIT License', 'OSI Approved :: MIT License'),
-    'gpl2': ('GNU General Public License v2', 'OSI Approved :: GNU General Public License v2 (GPLv2)'),
-    'gpl3': ('GNU General Public License v3', 'OSI Approved :: GNU General Public License v3 (GPLv3)'),
-    'bsd3': ('BSD License', 'OSI Approved :: BSD License'),
-}
-statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
-    '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
-py_versions = '3.6 3.7 3.8 3.9 3.10'.split()
-
-requirements = shlex.split(cfg.get('requirements', ''))
-if cfg.get('pip_requirements'): requirements += shlex.split(cfg.get('pip_requirements', ''))
-min_python = cfg['min_python']
-lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
-dev_requirements = (cfg.get('dev_requirements') or '').split()
-
-setuptools.setup(
-    name = cfg['lib_name'],
-    license = lic[0],
-    classifiers = [
-        'Development Status :: ' + statuses[int(cfg['status'])],
-        'Intended Audience :: ' + cfg['audience'].title(),
-        'Natural Language :: ' + cfg['language'].title(),
-    ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
-    url = cfg['git_url'],
-    packages = setuptools.find_packages(),
-    include_package_data = True,
-    install_requires = requirements,
-    extras_require={ 'dev': dev_requirements },
-    dependency_links = cfg.get('dep_links','').split(),
-    python_requires  = '>=' + cfg['min_python'],
-    long_description = open('README.md', encoding='utf-8').read(),
-    long_description_content_type = 'text/markdown',
-    zip_safe = False,
-    entry_points = {
-        'console_scripts': cfg.get('console_scripts','').split(),
-        'nbdev': [f'{cfg.get("lib_path")}={cfg.get("lib_path")}._modidx:d']
-    },
-    **setup_cfg)
+extras = {}
+extras["quality"] = ["black ~= 23.1", "ruff >= 0.0.241", "hf-doc-builder >= 0.3.0"]
 
 
+setup(
+    name="fastinference",
+    version="0.0.1",
+    description="An efficient inference module for fastai",
+    long_description=open("README.md", "r", encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
+    keywords="deep learning",
+    license="Apache",
+    author="Zach Mueller",
+    author_email="muellerzr@gmail.com",
+    url="https://github.com/muellerzr/fastinfernece-nbdev2",
+    package_dir={"": "src"},
+    packages=find_packages("src"),
+    entry_points={},
+    python_requires=">=3.7.0",
+    install_requires=["numpy>=1.17", "packaging>=20.0", "psutil", "pyyaml", "torch>=1.4.0", "fastai>=2.0.0"],
+    extras_require=extras,
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    ],
+)
+
+# Release checklist
+# 1. Change the version in __init__.py and setup.py.
+# 2. Commit these changes with the message: "Release: VERSION"
+# 3. Add a tag in git to mark the release: "git tag VERSION -m 'Adds tag VERSION for pypi' "
+#    Push the tag to git: git push --tags origin main
+# 4. Run the following commands in the top-level directory:
+#      python setup.py bdist_wheel
+#      python setup.py sdist
+# 5. Upload the package to the pypi test server first:
+#      twine upload dist/* -r pypitest
+#      twine upload dist/* -r pypitest --repository-url=https://test.pypi.org/legacy/
+# 6. Check that you can install it in a virtualenv by running:
+#      pip install -i https://testpypi.python.org/pypi accelerate
+#      accelerate env
+#      accelerate test
+# 7. Upload the final version to actual pypi:
+#      twine upload dist/* -r pypi
+# 8. Add release notes to the tag in github once everything is looking hunky-dory.
+# 9. Update the version in __init__.py, setup.py to the new version "-dev" and push to master

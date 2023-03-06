@@ -1,1 +1,3 @@
-This file will be overwritten by `index.ipynb`
+# fastinference
+> A collection of inference modules for fastai including inference speedup and interpretability
+
